@@ -689,7 +689,7 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 				
 	
 	
-- replication set复制集
+- replication set 复制集
 
 		
 		replicattion set 多台服务器维护相同的数据副本,提高服务器的可用性
@@ -704,91 +704,155 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 
 		
 		Replication set 设置全过程
+		
 		0:创建目录 
-		mkdir -p /data/r0 /data/r1 /data/r2
+		
+			mkdir -p /data/r0 /data/r1 /data/r2
 		
 		
 		1:启动3个实例,且声明实例属于某复制集
+		
 		./bin/mongod --port 27017 --dbpath /data/r0 --smallfiles --replSet rsa --fork --logpath /var/log/mongo17.log
+		
 		./bin/mongod --port 27018 --dbpath /data/r1 --smallfiles --replSet rsa --fork --logpath /var/log/mongo18.log
+		
 		./bin/mongod --port 27019 --dbpath /data/r2 --smallfiles --replSet rsa --fork --logpath /var/log/mongo19.log
 		
+		# --smallfiles 是指测试时候 不用于正式环境
+		
 		2:配置
-		rsconf = {
+		
+		通过mongo命令连接:
+		
+		var rsconf = {
 		    _id:'rsa',
 		    members:
 		    [
-		        {_id:0,
-		        host:'192.168.1.201:27017'
+		        {
+					_id: 0,
+		        	host:'192.168.1.201:27017'
 		        }
 		    ]
 		}
 		
 		
 		3: 根据配置做初始化
-		rs.initiate(rsconf);
+		
+			rs.initiate(rsconf);
 		
 		4: 添加节点
-		rs.add('192.168.1.201:27018');
-		rs.add('192.168.1.201:27019');
+		
+			rs.add('192.168.1.201:27018');
+			
+			rs.add('192.168.1.201:27019');
 		
 		
 		5:查看状态
-		rs.status();
-		
-		
+			
+			rs.status();
 		
 		6:删除节点
-		rs.remove('192.168.1.201:27019');
+			
+			rs.remove('192.168.1.201:27019');
 		
 		7:主节点插入数据
-		>use test
-		>db.user.insert({uid:1,name:'lily'});
+			
+			>use test
+			
+			>db.user.insert({uid:1,name:'lily'});
 		
 		8:连接secondary查询同步情况
-		./bin/mongo --port 27019
-		>use test
-		>show tables
+			
+			./bin/mongo --port 27019
+			
+			>use test
+			
+			>show tables
 		
 		rsa:SECONDARY> show tables;
+		
+		
+		
 		Sat Aug 17 16:03:55.786 JavaScript execution failed: error: { "$err" : "not master and slaveOk=false", "code" : 13435 } 
 		
-		8.1 出现上述错误,是因为slave默认不许读写
-		>rs.slaveOk();
-		>show tables
+		8.1 出现上述错误---是因为slave默认不许读写
+			
+			> rs.slaveOk();   // 这是secondry服务声明的
 		
-		#看到与primary 一致的数据
+		# 看到与primary 一致的数据
 		
 	
 	
 - 分片
 
 			
+		分片:
+			
+			是指将数据合理的分布多个服务器实例上 便于分担服务器的压力
+		
 		1:在3台独立服务器上,分别运行 27017,27018,27019实例, 互为副本集,形成3套repl set
+			
+			
+			./mongod --dbpath=/data/mongodb17 --logpath=/data/m17.log --prot 27017 --fork
+			
+			./mongod --dbpath=/data/mongodb18 --logpath=/data/m18.log --prot 27018 --fork
+			
+			./mongod --dbpath=/data/mongodb19 --logpath=/data/m19.log --prot 27019 --fork
+			
+			
 		2: 在3台服务器上,各配置config server, 运行27020端口上
+			
+			./mongod --dbpath=/data/mongodb20 --logpath=/data/m20.log --prot 27020 --fork --configsrv
+			
+			此处是启动configsvr进程
 		
 		3: 配置mongos
 		
-		./bin/mongos --port 30000 \
-		
-		 --dbconfig 192.168.1.201:27020,192.168.1.202:27020,192.168.1.203:27020
+			./bin/mongos --port 30000 --dbconfig 192.168.1.201:27020,192.168.1.202:27020,192.168.1.203:27020 --logpath /data/30.log
+			
+			处是启动mongodb 路由进程
 		 
 		4:连接路由器
+		
 		./bin/mongo --port 30000
 		
 		5: 添加repl set为片
-		>sh.addShard(‘192.168.1.201:27017’);
-		>sh.addShard(‘192.168.1.203:27017’);
-		>sh.addShard(‘192.168.1.203:27017’);
+		
+			> sh.addShard(‘192.168.1.201:27017’);
+			
+			> sh.addShard(‘192.168.1.203:27018’);
+			
+			> sh.addShard(‘192.168.1.203:27019’);
 		
 		
 		6: 添加待分片的库
-		>sh.enableSharding(databaseName);
+			
+			> sh.enableSharding(databaseName);
+			
+			// 明确该数据库是分片
+			
+			通过命令 sh.status()
+				
+				会返回信息中 {
+				
+					sharding version :{}
+					
+					shards : {}
+					
+					databases : {
+					
+						"_id": "mondb", "partitioned": true, "primary": "shard002"
+					
+					}
+				
+				}
 		
 		7: 添加待分片的表
-		>sh.shardCollection(‘dbName.collectionName’,{field:1});
+			
+			> sh.shardCollection(‘dbName.collectionName’,{field:1});
 		
-		Field是collection的一个字段,系统将会利用filed的值,来计算应该分到哪一个片上.
+		Field是collection的一个字段,系统将会利用filed的值,来计算应该分到哪一个片上
+		
 		这个filed叫”片键”, shard key
 		
 		
@@ -801,12 +865,15 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		维护片之间的数据均衡
 		
 		问: 为什么插入了10万条数据,才2个chunk?
-		答: 说明chunk比较大(默认是64M)
-		在config数据库中,修改chunksize的值.
+		
+			答: 说明chunk比较大(默认是64M)
+			
+			在config数据库中,修改chunksize的值.
 		
 		问: 既然优先往某个片上插入,当chunk失衡时,再移动chunk,
 		自然,随着数据的增多,shard的实例之间,有chunk来回移动的现象,这将带来什么问题?
-		答: 服务器之间IO的增加, 
+			
+			答: 服务器之间IO的增加, 
 		
 		接上问: 能否我定义一个规则, 某N条数据形成1个块,预告分配M个chunk,
 		M个chunk预告分配在不同片上. 
@@ -815,15 +882,23 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		答: 能, 手动预先分片!
 		
 		以shop.user表为例
-		1: sh.shardCollection(‘shop.user’,{userid:1}); //user表用userid做shard key
 		
-		2: for(var i=1;i<=40;i++) { sh.splitAt('shop.user',{userid:i*1000}) } 
+			1: sh.shardCollection(‘shop.user’,{userid:1}); 
+			
+				//user表用userid做shard key
+				
 		
-		// 预先在1K 2K...40K这样的界限切好chunk(虽然chunk是空的), 这些chunk将会均匀移动到各片上.
+			2: for(var i=1;i<=40;i++) { sh.splitAt('shop.user',{userid:i*1000}) } 
 		
-		3: 通过mongos添加user数据. 数据会添加到预先分配好的chunk上, chunk就不会来回移动了.
+				// 预先在1K 2K...40K这样的界限切好chunk(虽然chunk是空的), 这些chunk将会均匀移动到各片上.
+		
+			
+			3: 通过mongos添加user数据. 数据会添加到预先分配好的chunk上, chunk就不会来回移动了.
 		
 		
 		
 			
 	
+
+	
+![alt text](./imgs/fragmentation.jpg "Title")
