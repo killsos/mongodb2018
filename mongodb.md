@@ -105,7 +105,9 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		隐式创建collection
 		
-			db.collectionName.insert(document) // collectionName 这个collection是之前不存在
+			db.collectionName.insert(document) 
+			
+			// collectionName 这个collection是之前不存在
 		
 		
 		删除collection
@@ -178,13 +180,13 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		修改时的赋值表达式
 		
-			$set  修改某列的值
+			$set        修改某列的值
 			
-			$unset 删除某个列
+			$unset      删除某个列
 			
-			$rename 重命名某个列
+			$rename     重命名某个列
 			
-			$inc 增长某个列
+			$inc        增长某个列
 			
 			$setOnInsert 当upsert为true时,并且发生了insert操作时,可以补充的字段.
 		
@@ -194,6 +196,9 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 			{upsert:true/false,multi:true/false}
 			
 			Upsert---是指没有匹配的行,则直接插入该行.(和mysql中的replace一样)
+			
+			
+		
 		
 		例:db.stu.update({name:'wuyong'},{$set:{name:'junshiwuyong'}},{upsert:true});
 			
@@ -244,12 +249,15 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		2: $ne --- != 查询表达式
 		
-			{field:{$nq:value}}
+			{field:{$ne:value}}
 			
 			作用--查filed列的值 不等于 value 的文档
 		
 		3: $in:[]
-			例: db.goods.find({cat_id:{$in:[2,8]}} , {goods_id:1,cat_id:1,goods_name:1,_id:0});
+		
+			例: db.goods.find({cat_id:{$in:[2,8]}} , 
+			
+			{goods_id:1,cat_id:1,goods_name:1,_id:0});
 		
 		4: $nin --> not in
 			
@@ -282,11 +290,10 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 			例: db.goods.find({$where:'this.cat_id != 3 && this.cat_id != 11'});
 		
 		注意: 用$where查询时, mongodb是把bson结构的二进制数据转换为json结构的对象,
+		
 		然后比较对象的属性是否满足表达式.
 		
 		速度较慢
-		
-		
 		
 		
 		Update时可用的操作符
@@ -295,11 +302,15 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 			->db.user.insert({name:'lisi',age:12,sex:'male',height:123,area:'haidian'});
 		
 			
-			->db.user.update({name:'lisi'},{$set:{area:'chaoyang'},$unset:{height:1},$inc:{age:1},$rename:{sex:'gender'}});
+			->db.user.update({name:'lisi'},{$set:{area:'chaoyang'},
+			
+			$unset:{height:1},$inc:{age:1},$rename:{sex:'gender'}});
 			
 			> db.user.find();
 			
-			{ "_id" : ObjectId("51fc01c4f5de93e1f2856e33"), "age" : 13, "area" : "chaoyang", "gender" : "male", "name" : "lisi" }
+			{ "_id" : ObjectId("51fc01c4f5de93e1f2856e33"), "age" : 13, 
+			
+			"area" : "chaoyang", "gender" : "male", "name" : "lisi" }
 		
 		$setOnInsert ->相当于mysql中的列的默认值
 		
@@ -311,38 +322,55 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 
 		
 		游标是什么?
+		
 		通俗的说,游标不是查询结果,而是查询的返回资源,或者接口.
+		
 		通过这个接口,你可以逐条读取.
+		
 		就像php中的fopen打开文件,得到一个资源一样, 通过资源,可以一行一行的读文件.
 		
 		
 		声明游标:
+		
 		var cursor =  db.collectioName.find(query,projection);
+		
 		cursor.hasNext() ,判断游标是否已经取到尽头
+		
 		cursor. Next() , 取出游标的下1个单元
 		
 		用while来循环游标
+		
 		> var mycursor = db.bar.find({_id:{$lte:5}})
+		
 		> while(mycursor.hasNext()) {
+			
 		... printjson(mycursor.next());
+		
 		... }
 		
 		
 		例:
 		// 声明游标
+		
 		var cursor = db.goods.find();
+		
 		// 循环游标
+		
 		for(var doc=true;cursor.hasNext();) { printjson(cursor.next());}
 		
 		也可以简写:
+		
 		for(var  cursor=db.goods.find(), doc=true;cursor.hasNext();) { printjson(cursor.next());}
 		
 		
 		游标还有一个迭代函数,允许我们自定义回调函数来逐个处理每个单元.
+		
 		cursor.forEach(回调函数);
 		例:
 		> var gettitle = function(obj) {print(obj.goods_name)}
+		
 		> var cursor = db.goods.find();
+		
 		> cursor.forEach(gettitle);
 		
 		
@@ -386,29 +414,41 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		
 		常用命令:
-		查看当前索引状态: db.collection.getIndexes();
 		
-		创建普通的单列索引:db.collection.ensureIndex({field:1/-1});  1是升续 2是降续
+			查看当前索引状态: db.collection.getIndexes();
+		
+			创建普通的单列索引:db.collection.ensureIndex({field:1/-1});  1是升续 2是降续
 		
 		删除单个索引
-		db.collection.dropIndex({filed:1/-1});
+			
+			db.collection.dropIndex({filed:1/-1});
 		
-		创建多列索引  db.collection.ensureIndex({field1:1/-1, field2:1/-1});
+		创建多列索引  
+			
+			db.collection.ensureIndex({field1:1/-1, field2:1/-1});
 		
 		一下删除所有索引
-		db.collection.dropIndexes();
+			
+			db.collection.dropIndexes();
 		
 		创建子文档索引
-		db.collection.ensureIndex({‘filed.subfield’:1/-1});
+			
+			db.collection.ensureIndex({‘filed.subfield’:1/-1});
 		
 		创建唯一索引:
-		db.collection.ensureIndex({filed.subfield:1/-1}, {unique:true});
+		
+			db.collection.ensureIndex({filed.subfield:1/-1}, {unique:true});
 		
 		创建稀疏索引:
-		稀疏索引的特点------如果针对field做索引,针对不含field列的文档,将不建立索引.
-		与之相对,普通索引,会把该文档的field列的值认为NULL,并建索引.
-		适宜于: 小部分文档含有某列时.
-		db.collection.ensureIndex({field:1/-1},{sparse:true});
+		
+			稀疏索引的特点------如果针对field做索引,针对不含field列的文档,将不建立索引.
+			
+			与之相对,普通索引,会把该文档的field列的值认为NULL,并建索引.
+			
+			适宜于: 小部分文档含有某列时.
+			
+			
+				db.collection.ensureIndex({field:1/-1},{sparse:true});
 		
 		> db.tea.find();
 		{ "_id" : ObjectId("5275f99b87437c610023597b"), "email" : "a@163.com" }
@@ -422,16 +462,22 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		
 		创建哈希索引(2.4后新增的)
-		哈希索引速度比普通索引快,但是,无能对范围查询进行优化.
-		适宜于---随机性强的散列
-		db.collection.ensureIndex({field:’hashed’});
+			
+			哈希索引速度比普通索引快,但是,无能对范围查询进行优化.
+			
+			适宜于---随机性强的散列
+			
+			db.collection.ensureIndex({field:’hashed’});
 		
 		重建索引
-		一个表经过很多次修改后,导致表的文件产生空洞,索引文件也如此.
-		可以通过索引的重建,减少索引文件碎片,并提高索引的效率.
-		类似mysql中的optimize table
+			
+			一个表经过很多次修改后,导致表的文件产生空洞,索引文件也如此.
+			
+			可以通过索引的重建,减少索引文件碎片,并提高索引的效率.
+			
+			类似mysql中的optimize table
 		
-		db.collection.reIndex()
+			db.collection.reIndex()
 		
 		
 	
@@ -439,79 +485,112 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 -  Mongodb导出与导入
 
 					
-		1: 导入/导出可以操作的是本地的mongodb服务器,也可以是远程的.
+		1: 导入/导出可以操作的是本地的mongodb服务器,也可以是远程的
 		所以,都有如下通用选项:
-		-h host   主机
-		--port port    端口
-		-u username 用户名
-		-p passwd   密码
+			
+			-h host   主机
+			
+			--port port    端口
+			
+			-u username 用户名
+			
+			-p passwd   密码
 		
 		
 		2: mongoexport 导出json格式的文件
-		问: 导出哪个库,哪张表,哪几列,哪几行?
 		
-		-d  库名
-		-c  表名
-		-f  field1,field2...列名
-		-q  查询条件
-		-o  导出的文件名
-		-- csv  导出csv格式(便于和传统数据库交换数据)
+			问: 导出哪个库,哪张表,哪几列,哪几行?
+		
+			-d  库名   database
+		
+			-c  表名   collection
+		
+			-f  field1,field2...列名
+			
+			-q  查询条件  query
+			
+			-o  导出的文件名  
+			
+			-- csv  导出csv格式(便于和传统数据库交换数据)
 		
 		例:
-		[root@localhost mongodb]# ./bin/mongoexport -d test -c news -o test.json
-		connected to: 127.0.0.1
-		exported 3 records
-		[root@localhost mongodb]# ls
-		bin  dump  GNU-AGPL-3.0  README  test.json  THIRD-PARTY-NOTICES
-		[root@localhost mongodb]# more test.json 
-		{ "_id" : { "$oid" : "51fc59c9fecc28d8316cfc03" }, "title" : "aaaa" }
-		{ "_id" : { "$oid" : "51fcaa3c5eed52c903a91837" }, "title" : "today is sataday" }
-		{ "_id" : { "$oid" : "51fcaa445eed52c903a91838" }, "title" : "ok now" }
+		# ./bin/mongoexport -d test -c news -o test.json
+			connected to: 127.0.0.1
+			exported 3 records
+		# ls
+			bin  dump  GNU-AGPL-3.0  README  test.json  THIRD-PARTY-NOTICES
+		
+		# more test.json 
+		
+			{ "_id" : { "$oid" : "51fc59c9fecc28d8316cfc03" }, "title" : "aaaa" }
+			{ "_id" : { "$oid" : "51fcaa3c5eed52c903a91837" }, "title" : "today is sataday" }
+			{ "_id" : { "$oid" : "51fcaa445eed52c903a91838" }, "title" : "ok now" }
 		
 		
 		例2: 只导出goods_id,goods_name列
-		./bin/mongoexport -d test -c goods -f goods_id,goods_name -o goods.json
+		
+			./bin/mongoexport -d test -c goods -f goods_id,goods_name -o goods.json
 		
 		例3: 只导出价格低于1000元的行
-		./bin/mongoexport -d test -c goods -f goods_id,goods_name,shop_price -q ‘{shop_price:{$lt:200}}’ -o goods.json
+		
+			./bin/mongoexport -d test -c goods -f 
+		
+			goods_id,goods_name,shop_price -q ‘{shop_price:{$lt:200}}’ 
+		
+			-o goods.json
 		
 		注: _id列总是导出
+		
 		Mongoimport 导入
 		
-		-d 待导入的数据库
-		-c 待导入的表(不存在会自己创建)
-		--type  csv/json(默认)
-		--file 备份文件路径
+				-d 待导入的数据库
+		
+				-c 待导入的表(不存在会自己创建)
+		
+				--type  csv/json(默认)
+		
+				--file 备份文件路径
 		
 		例1: 导入json
+		
 		./bin/mongoimport -d test -c goods --file ./goodsall.json
 		
 		例2: 导入csv
+		
 		./bin/mongoimport -d test -c goods --type csv -f goods_id,goods_name --file ./goodsall.csv 
 		
 		./bin/mongoimport -d test -c goods --type csv --headline -f goods_id,goods_name --file ./goodsall.csv 
 		
 		
 		mongodump 导出二进制bson结构的数据及其索引信息
-		-d  库名
-		-c  表名
-		-f  field1,field2...列名
+		
+			-d  库名
+			
+			-c  表名
+			
+			-f  field1,field2...列名
 		
 		例: 
-		mongodum -d test  [-c 表名]  默认是导出到mongo下的dump目录
+		
+			mongodump -d test  [-c 表名]  默认是导出到mongo下的dump目录
 		
 		规律: 
-		1:导出的文件放在以database命名的目录下
-		2: 每个表导出2个文件,分别是bson结构的数据文件, json的索引信息
-		3: 如果不声明表名, 导出所有的表
+		
+			1:导出的文件放在以database命名的目录下
+			
+			2: 每个表导出2个文件,分别是bson结构的数据文件, json的索引信息
+			
+			3: 如果不声明表名, 导出所有的表
 		
 		
 		mongorestore 导入二进制文件
-		例:
-		 ./bin/mongorestore -d test --directoryperdb dump/test/ (mongodump时的备份目录)
+		
+			例:
+		 		./bin/mongorestore -d test --directoryperdb dump/test/ (mongodump时的备份目录)
 		 
-		二进制备份,不仅可以备份数据,还可以备份索引, 
-		备份数据比较小.
+				二进制备份,不仅可以备份数据,还可以备份索引, 
+				
+				备份数据比较小.
 						
 					
 	
@@ -521,48 +600,91 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 
 				
 		注意:
-		A)在mongodb中,有一个admin数据库, 牵涉到服务器配置层面的操作,需要先切换到admin数据.
-		即 use admin , -->相当于进入超级用户管理模式.
 		
-		B)mongo的用户是以数据库为单位来建立的, 每个数据库有自己的管理员.
+			A)在mongodb中,有一个admin数据库, 牵涉到服务器配置层面的操作,需要先切换到admin数据.
 		
-		C) 我们在设置用户时,需要先在admin数据库下建立管理员---这个管理员登陆后,相当于超级管理员.
+			即 use admin , -->相当于进入超级用户管理模式.
+		
+			B)mongo的用户是以数据库为单位来建立的, 每个数据库有自己的管理员.
+		
+			C) 我们在设置用户时,需要先在admin数据库下建立管理员---这个管理员登陆后,相当于超级管理员.
 		
 		
 		0: 查看用户
-		
+			
+			命令:db.getUsers();
+			
+		0-1: 创建一个用户
+			
+			命令: db.createUser(用户信息, 读写信息)
+				
+				用户信息格式如下:
+					
+					{
+						user: "name",
+						pwd: "cleartext password",
+						customData: {any information},
+						roles: [
+							{role: "<role>", db: "datatbase"} | "<role>"
+						]
+					}
+					
+				读写信息格式如下:
+					
+					{w:1}
+					
+					可选的role
+					
+					例:
+						
+						db.createUser({user: 'sa', pwd: 'sa', roles: ['root']}, {w: 1})
 		
 		1: 添加用户
-		命令:db.addUser();
-		简单参数: db.addUser(用户名,密码,是否只读)
 		
-		注意: 添加用户后,我们再次退出并登陆,发现依然可以直接读数据库?
-		原因: mongodb服务器启动时, 默认不是需要认证的.
-		要让用户生效, 需要启动服务器时,就指定 --auth 选项.
-		这样, 操作时,就需要认证了.
+			命令:db.addUser();
+			
+			简单参数: db.addUser(用户名,密码,是否只读)
+		
+			注意: 添加用户后,我们再次退出并登陆,发现依然可以直接读数据库?
+			
+			原因: mongodb服务器启动时, 默认不是需要认证的.
+			
+			要让用户生效, 需要启动服务器时,就指定 --auth 选项.
+			
+			这样, 操作时,就需要认证了.
 		
 		
 		例: 
 		1: 添加用户
-		> use admin
-		> db.addUser(‘sa’,’sa’,false);
+		
+			> use admin
+			
+			> db.addUser(‘sa’,’sa’,false);
 		
 		2: 认证
-		> use test
-		> db.auth(用户名,密码);
+		
+			> use test
+			
+			> db.auth(用户名,密码); // 告诉mongodb 自己是谁
 		
 		3: 修改用户密码
-		> use test
-		> db.changeUserPassword(用户名, 新密码);
+			
+			> use test
+			
+			> db.changeUserPassword(用户名, 新密码);
 		
 		3:删除用户
-		> use test
-		> db.removeUser(用户名);
+		
+			> use test
+			
+			> db.removeUser(用户名);
 		
 		注: 如果需要给用户添加更多的权限,可以用json结构来传递用户参数
-		例:
-		> use test
-		>db.addUser({user:'guan',pwd:'111111',roles:['readWrite,dbAdmin']});
+			例:
+			
+			> use test
+			
+			>db.addUser({user:'guan',pwd:'111111',roles:['readWrite,dbAdmin']});
 		
 				
 	
@@ -646,7 +768,9 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		2: 在3台服务器上,各配置config server, 运行27020端口上
 		
 		3: 配置mongos
+		
 		./bin/mongos --port 30000 \
+		
 		 --dbconfig 192.168.1.201:27020,192.168.1.202:27020,192.168.1.203:27020
 		 
 		4:连接路由器
@@ -672,7 +796,8 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		
 		而是N篇文档,形成一个块"chunk",
 		优先放在某个片上, 
-		当这片上的chunk,比另一个片的chunk,区别比较大时, (>=3) ,会把本片上的chunk,移到另一个片上, 以chunk为单位,
+		当这片上的chunk,比另一个片的chunk,区别比较大时, (>=3) ,
+		会把本片上的chunk,移到另一个片上, 以chunk为单位,
 		维护片之间的数据均衡
 		
 		问: 为什么插入了10万条数据,才2个chunk?
@@ -692,7 +817,9 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 		以shop.user表为例
 		1: sh.shardCollection(‘shop.user’,{userid:1}); //user表用userid做shard key
 		
-		2: for(var i=1;i<=40;i++) { sh.splitAt('shop.user',{userid:i*1000}) } // 预先在1K 2K...40K这样的界限切好chunk(虽然chunk是空的), 这些chunk将会均匀移动到各片上.
+		2: for(var i=1;i<=40;i++) { sh.splitAt('shop.user',{userid:i*1000}) } 
+		
+		// 预先在1K 2K...40K这样的界限切好chunk(虽然chunk是空的), 这些chunk将会均匀移动到各片上.
 		
 		3: 通过mongos添加user数据. 数据会添加到预先分配好的chunk上, chunk就不会来回移动了.
 		
