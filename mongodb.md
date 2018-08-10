@@ -902,3 +902,144 @@ mongodb 文档数据库,存储的是文档(Bson->json的二进制化)
 
 	
 ![alt text](./imgs/fragmentation.jpg "Title")
+
+
+- group 分组统计
+	
+			
+		db.collection.group(document)
+		
+		document:
+		
+		{
+			key:{key1:1,key2:1},
+			
+			cond:{},
+			
+			reduce: function(curr,result) {
+				
+			},
+			
+			initial:{
+				total:0,
+			},
+			
+			finalize:function(result) {
+			}
+		}
+			
+		
+		key: 分组字段
+		
+		cond:查询条件
+		
+		reduce:聚合函数
+		
+		initial:初始化
+		
+		finalize:统计一组后的回调函数
+		
+			
+			
+
+
+- aggregate
+
+						
+		命令: db.collection.aggreate()
+		
+		#查询每个栏目下的商品数量
+		
+		db.collection.aggregate(
+			[
+			{$group:{_id:"$cat_id",total:{$sum:1}}}
+			]
+		);
+		
+		#查询goods下有多少条商品,select count(*) from goods
+		
+		[
+			{$group:{_id:null,total:{$sum:1}}}
+		]
+		
+		[
+			{$match: {shop_price:{$gt:50}}},
+			{$group:{_id:"$cat_id", total: {$sum:1}}}
+			{$match:{total: {$gte:3}}}
+			{$sort: {total:-1}}
+			{$limit: 3}
+		
+		]
+		
+		
+		
+		where                                   $match
+		
+		GROUP BY                                $group
+		
+		HAVING                                  $match
+		
+		SELECT                                  $project
+		
+		ORDER BY                                $sort
+		
+		LIMIT                                   $limit
+		
+		SUM()		                            $sum
+		
+		COUNT                                   $sum	
+		
+						
+	
+	
+- mapreduce
+	
+		
+		mapReduce 随着"大数据"概念而流行
+		
+		其实mapReduce的概念非常简单
+		
+		从功能上说,相当于RDBMS的 group 操作
+		
+		
+		mapReduce的真正强项在哪?
+		
+			答:在于分布式,当数据非常大时,像google,有N多数据中心, 数据都不在地球的一端,用group力所不及.
+		
+		
+		group既然不支持分布式,单台服务器的运算能力必然是有限的.
+		
+		mapRecuce支持分布式,支持大量的服务器同时工作,用蛮力来统计.
+		
+		mapRecuce的工作过程:
+		
+			map-->映射
+			
+			reduce->归约
+		
+		
+		map: 先是把属于同一个组的数据,映射到一个数组上.cat_id-3 [23,2,6,7]
+		
+		reduce: 把数组(同一组)的数据,进行运算.
+		
+		
+		
+		#用mapReduce计算每个栏目下商品的平均价格
+		
+		var map = function() {
+		    emit(this.cat_id,this.shop_price);
+		    }
+			
+			
+		var reduce = function(cat_id,values) {
+		    return Array.avg(values);
+		}
+		
+		
+		db.goods.mapReduce(map,reduce,{out:'res'});
+		
+		# out是说明最后存储结果的collections的名字是 res
+		
+		
+			
+	
